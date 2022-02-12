@@ -1,0 +1,73 @@
+version: "3.9"
+
+# Services
+services:
+    
+    user_service:
+        build: ./userservice
+        volumes:
+            - ./userservice:/app
+        working_dir: /app
+        ports:
+            - 4000:4000
+
+    # MySQL Service
+    user_service_db:
+        image: mysql:8
+        ports:
+            - 3306:3306
+        environment:
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=user_service
+        volumes:
+            - mysqldata:/var/lib/mysql:delegated
+
+    # MySQL Service
+    user_service_test_db:
+        image: mysql:8
+        ports:
+            - 3307:3306
+        environment:
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=user_service_test
+        volumes:
+            - mysqltestdata:/var/lib/mysql:delegated
+
+    # subscription_service:
+    #     build: .
+    #     volumes:
+    #         - .:/app
+    #     working_dir: /app
+    #     ports:
+    #         - 4000:4000
+
+    # # MySQL Service
+    # subscription_service_db:
+    #     image: mysql:8
+    #     ports:
+    #         - 3306:3306
+    #     environment:
+    #         MYSQL_ROOT_PASSWORD: root
+    #     volumes:
+    #         - mysqldata:/var/lib/mysql:delegated
+
+    # # PhpMyAdmin Service
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin:5
+        ports:
+            - 9000:80
+        environment:
+            PMA_HOSTS: user_service_db, user_service_test_db
+        volumes:
+            - phpmyadmindata:/var/www/html:delegated
+        depends_on:
+            - user_service_db
+            
+# Volumes
+volumes:
+
+    mysqldata:
+
+    mysqltestdata:
+
+    phpmyadmindata:
