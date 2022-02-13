@@ -15,4 +15,4 @@
 # vendor/
 
 # User Service
-userservice/.env
+*.env

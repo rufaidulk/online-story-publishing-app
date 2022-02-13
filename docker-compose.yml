@@ -33,6 +33,36 @@ services:
         volumes:
             - mysqltestdata:/var/lib/mysql:delegated
 
+    subscription_service:
+        build: ./subscriptionservice
+        volumes:
+            - ./subscriptionservice:/app
+        working_dir: /app
+        ports:
+            - 4001:4001
+
+    # MySQL Service
+    subscription_service_db:
+        image: mysql:8
+        ports:
+            - 3308:3306
+        environment:
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=subscription_service
+        volumes:
+            - susbscriptiondata:/var/lib/mysql:delegated
+
+    # MySQL Service
+    subscription_service_test_db:
+        image: mysql:8
+        ports:
+            - 3309:3306
+        environment:
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_DATABASE=subscription_service_test
+        volumes:
+            - subscriptiontestdata:/var/lib/mysql:delegated
+
     # subscription_service:
     #     build: .
     #     volumes:
@@ -57,7 +87,7 @@ services:
         ports:
             - 9000:80
         environment:
-            PMA_HOSTS: user_service_db, user_service_test_db
+            PMA_HOSTS: user_service_db, user_service_test_db, subscription_service_db, subscription_service_test_db
         volumes:
             - phpmyadmindata:/var/www/html:delegated
         depends_on:
@@ -69,5 +99,9 @@ volumes:
     mysqldata:
 
     mysqltestdata:
+
+    susbscriptiondata:
+
+    subscriptiontestdata:
 
     phpmyadmindata:
