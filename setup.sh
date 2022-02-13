@@ -19,7 +19,8 @@ case "$1" in
 		docker-compose down -v
 		;;
     test)
-        docker-compose exec user_service php setup.php --mode=testing
+		echo "Testing {$2}....."
+        docker-compose exec $2 php setup.php --mode=testing
 		docker-compose exec $2 go clean -testcache
 		docker-compose exec $2 go test -v ./tests/
 		;;
