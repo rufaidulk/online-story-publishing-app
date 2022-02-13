@@ -17,6 +17,38 @@ type UpgradeForm struct {
 	PeriodType string
 }
 
+type SubscriptionResponse struct {
+	Id         int64      `json:"id"`
+	UserUuid   string     `json:"user_uuid"`
+	IsPremium  bool       `json:"is_premium"`
+	ExpiryDate *time.Time `json:"expiry_date"`
+}
+
+func CurrentSubscription(ctx echo.Context) error {
+	db := adapters.GetDbHandle(ctx)
+	userUuid := ctx.Get("userUuid").(string)
+	uuidData := models.NewUuidData(userUuid)
+	subscription := models.NewSubscriptionData()
+	err := db.Where("status = ? AND user_uuid = ?", models.SubscriptionActive, uuidData).Take(subscription).Error
+	if err != nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, "No subscription"))
+	}
+	isPremium := true
+	if subscription.IsPremium == models.FreeSubscription {
+		isPremium = false
+	}
+
+	res := SubscriptionResponse{
+		Id:         subscription.Id,
+		UserUuid:   subscription.UserUuidText,
+		IsPremium:  isPremium,
+		ExpiryDate: subscription.ExpiryDate,
+	}
+
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "SUCCESS", res))
+}
+
 func CreateBaseSubscription(ctx echo.Context) error {
 	db := adapters.GetDbHandle(ctx)
 	userUuid := ctx.Get("userUuid").(string)
