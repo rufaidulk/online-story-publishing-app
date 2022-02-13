@@ -23,6 +23,7 @@ func main() {
 
 func configRoutes(e *echo.Echo, userIdentity echo.MiddlewareFunc) {
 	e.POST("/subscriptions", controllers.CreateBaseSubscription, userIdentity)
+	e.POST("/subscriptions/upgrade", controllers.UpgradeSubscriptionToPremium, userIdentity)
 }
 
 func getUserIdentityMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {

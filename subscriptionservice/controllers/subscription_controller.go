@@ -13,10 +13,14 @@ import (
 	"gorm.io/gorm"
 )
 
+type UpgradeForm struct {
+	PeriodType string
+}
+
 func CreateBaseSubscription(ctx echo.Context) error {
 	db := adapters.GetDbHandle(ctx)
 	userUuid := ctx.Get("userUuid").(string)
-	err := validateBaseSubscriptionRequest(userUuid, db)
+	_, err := validateBaseSubscriptionRequest(userUuid, db)
 	if err != nil {
 		return ctx.JSON(http.StatusUnprocessableEntity,
 			helper.NewErrorResponse(http.StatusUnprocessableEntity, err.Error()))
@@ -24,7 +28,6 @@ func CreateBaseSubscription(ctx echo.Context) error {
 
 	subscriptionPlan := models.NewSubscriptionPlan()
 	subscriptionPlan.GetBasicSubscriptionPlan(ctx)
-	fmt.Println(subscriptionPlan)
 
 	tx := db.Begin()
 	paymentTxnId, err := handlePayment(subscriptionPlan.Amount, tx)
@@ -33,10 +36,9 @@ func CreateBaseSubscription(ctx echo.Context) error {
 	}
 	subscription := models.NewSubscription()
 	subscription.SetUuid(userUuid)
-	subscription.SubscriptionPlanId = subscription.Id
+	subscription.SubscriptionPlanId = subscriptionPlan.Id
 	subscription.PaymentTransactionId = paymentTxnId
-	days := time.Duration(subscriptionPlan.PeriodInDays)
-	subscription.ExpiryDate = time.Now().Add(time.Hour * days)
+	subscription.IsPremium = models.FreeSubscription
 	subscription.SetSubscriptionActive()
 
 	if err := tx.Create(&subscription).Error; err != nil {
@@ -48,15 +50,61 @@ func CreateBaseSubscription(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "SUCCESS", ""))
 }
 
-func validateBaseSubscriptionRequest(userUuid string, db *gorm.DB) error {
-	uuidData := models.NewUuidData(userUuid)
-	subscription := models.NewSubscription()
-	err := db.Where("status = ? AND user_uuid = ?", models.ActiveSubscription, uuidData).Take(&subscription).Error
+func UpgradeSubscriptionToPremium(ctx echo.Context) error {
+	db := adapters.GetDbHandle(ctx)
+	form := new(UpgradeForm)
+	if err := ctx.Bind(form); err != nil {
+		return err
+	}
+	userUuid := ctx.Get("userUuid").(string)
+	baseSubscription, err := validateBaseSubscriptionRequest(userUuid, db)
 	if err == nil {
-		return errors.New("Requested user has an existing subscription.")
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, "user doesn't have a base subscription"))
 	}
 
-	return nil
+	subscriptionPlan := models.NewSubscriptionPlan()
+	if err := subscriptionPlan.GetPremiumSubscriptionPlan(form.PeriodType, ctx); err != nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, err.Error()))
+	}
+
+	tx := db.Begin()
+	if err := db.Model(&baseSubscription).Update("status", models.SubscriptionCompleted).Error; err != nil {
+		return err
+	}
+
+	paymentTxnId, err := handlePayment(subscriptionPlan.Amount, tx)
+	if err != nil {
+		return err
+	}
+
+	subscription := models.NewSubscription()
+	subscription.SetUuid(userUuid)
+	subscription.SubscriptionPlanId = subscriptionPlan.Id
+	subscription.PaymentTransactionId = paymentTxnId
+	subscription.IsPremium = models.PremiumSubscription
+	expiryDate := time.Now().AddDate(0, 0, int(subscriptionPlan.PeriodInDays))
+	subscription.ExpiryDate = &expiryDate
+	subscription.SetSubscriptionActive()
+	if err := tx.Create(&subscription).Error; err != nil {
+		return err
+	}
+
+	tx.Commit()
+
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "SUCCESS", ""))
+}
+
+func validateBaseSubscriptionRequest(userUuid string, db *gorm.DB) (models.Subscription, error) {
+	uuidData := models.NewUuidData(userUuid)
+	subscription := models.NewSubscription()
+	err := db.Where("status = ? AND user_uuid = ? and is_premium = ?", models.SubscriptionActive, uuidData, models.FreeSubscription).Take(subscription).Error
+	if err == nil {
+		return *subscription, errors.New("requested user has an existing subscription")
+	}
+
+	return *subscription, nil
 }
 
 func handlePayment(amt float64, tx *gorm.DB) (int64, error) {
@@ -67,6 +115,10 @@ func handlePayment(amt float64, tx *gorm.DB) (int64, error) {
 	tx.Model(&sequence).Update("seq_no", sequence.SeqNo+1)
 
 	refNo := fmt.Sprintf("TX%06d", sequence.SeqNo)
+	if amt > 0 {
+		fmt.Println("Calling Payment Gateway...")
+	}
+
 	paymentTxn := models.PaymentTransaction{
 		RefNo:  refNo,
 		Amount: amt,

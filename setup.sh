@@ -14,6 +14,7 @@ case "$1" in
 		;;
     db)
         docker-compose exec user_service php setup.php
+        docker-compose exec subscription_service php setup.php
 		;;
     clean)
 		docker-compose down -v

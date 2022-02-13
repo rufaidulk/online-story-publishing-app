@@ -4,7 +4,7 @@ define("ENV_FILE", __DIR__ . "/.env");
 define("DB_FILE", __DIR__ . "/db.sql");
 
 $config = [];
-print("Importing database..." . PHP_EOL);
+print("Importing subscription service database..." . PHP_EOL);
 loadEnvVariables();
 importDatabase();
 print("Completed\n" . PHP_EOL);
