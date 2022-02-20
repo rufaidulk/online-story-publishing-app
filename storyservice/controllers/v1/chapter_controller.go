@@ -89,7 +89,7 @@ func UpdateChapter(ctx echo.Context) error {
 	}
 	chapter.Title = form.Title
 	chapter.Body = form.Body
-	if err := chapter.Update(); err != nil {
+	if err := chapter.UpdateDocument(); err != nil {
 		return err
 	}
 	story.EditChapter(chapter.Id, chapter.Title)

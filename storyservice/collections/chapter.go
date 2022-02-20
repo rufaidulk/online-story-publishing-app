@@ -50,7 +50,7 @@ func (c *Chapter) CreateDocument() error {
 	return nil
 }
 
-func (c *Chapter) Update() error {
+func (c *Chapter) UpdateDocument() error {
 	data := bson.D{
 		{"title", c.Title},
 		{"body", c.Body},
