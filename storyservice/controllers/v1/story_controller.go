@@ -88,7 +88,7 @@ func CreateStory(ctx echo.Context) error {
 		return err
 	}
 	story.AddChapter(chapter.Id, chapter.Title)
-	if err := story.Update(); err != nil {
+	if err := story.UpdateDocument(); err != nil {
 		return err
 	}
 	storyResponse := buildStoryResponse(story)
@@ -135,7 +135,7 @@ func UpdateStoryPromotionalInfo(ctx echo.Context) error {
 	oldFile := story.PromotionalImage
 	story.PromotionalTitle = form.PromotionalTitle
 	story.PromotionalImage = fileName
-	if err := story.Update(); err != nil {
+	if err := story.UpdateDocument(); err != nil {
 		return err
 	}
 	if oldFile != "" {
@@ -175,7 +175,7 @@ func UpdateStory(ctx echo.Context) error {
 	}
 	//todo:: check the eligibility to write premium stories
 	story.IsPremium = form.IsPremium
-	if err := story.Update(); err != nil {
+	if err := story.UpdateDocument(); err != nil {
 		return err
 	}
 

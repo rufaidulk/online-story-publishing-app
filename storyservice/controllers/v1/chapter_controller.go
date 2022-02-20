@@ -16,6 +16,11 @@ type ChapterForm struct {
 	IsStoryCompleted bool `json:"is_story_completed"`
 }
 
+type ChapterUpdateForm struct {
+	Title string
+	Body  string
+}
+
 type ChapterResponse struct {
 	Id        primitive.ObjectID `json:"_id"`
 	UserUuid  string             `json:"user_uuid"`
@@ -53,12 +58,47 @@ func CreateChapter(ctx echo.Context) error {
 		story.IsCompleted = true
 	}
 	story.AddChapter(chapter.Id, chapter.Title)
-	if err := story.Update(); err != nil {
+	if err := story.UpdateDocument(); err != nil {
 		return err
 	}
 
 	res := buildChapterResponse(chapter)
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "chapter created", res))
+}
+
+func UpdateChapter(ctx echo.Context) error {
+	userUuid := ctx.Get("userUuid").(string)
+	form := new(ChapterUpdateForm)
+	if err := ctx.Bind(form); err != nil {
+		return err
+	}
+	storyId := ctx.Param("id")
+	story := collections.NewStory()
+	if err := story.LoadById(storyId); err != nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, "invalid story"))
+	}
+	chapterId := ctx.Param("chapterId")
+	chapter := collections.NewChapter()
+	if err := chapter.LoadById(chapterId); err != nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, "invalid chapter"))
+	}
+	if statusCode, err := validateChapterUpdateForm(story, chapter, form, userUuid); err != nil {
+		return ctx.JSON(statusCode, helper.NewErrorResponse(statusCode, err.Error()))
+	}
+	chapter.Title = form.Title
+	chapter.Body = form.Body
+	if err := chapter.Update(); err != nil {
+		return err
+	}
+	story.EditChapter(chapter.Id, chapter.Title)
+	if err := story.UpdateDocument(); err != nil {
+		return err
+	}
+
+	res := buildChapterResponse(chapter)
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "chapter updated", res))
 }
 
 func validateChapterForm(story *collections.Story, form *ChapterForm, userUuid string) (int, error) {
@@ -68,6 +108,26 @@ func validateChapterForm(story *collections.Story, form *ChapterForm, userUuid s
 
 	if story.IsCompleted {
 		return http.StatusUnprocessableEntity, errors.New("story already completed")
+	}
+
+	if form.Body == "" {
+		return http.StatusUnprocessableEntity, errors.New("body is required")
+	}
+
+	return 0, nil
+}
+
+func validateChapterUpdateForm(story *collections.Story, chapter *collections.Chapter, form *ChapterUpdateForm, userUuid string) (int, error) {
+	if story.UserUuid != userUuid {
+		return http.StatusForbidden, errors.New("forbidden")
+	}
+
+	if chapter.UserUuid != userUuid {
+		return http.StatusForbidden, errors.New("forbidden")
+	}
+
+	if chapter.StoryId != story.Id {
+		return http.StatusForbidden, errors.New("invalid story and chapter")
 	}
 
 	if form.Body == "" {

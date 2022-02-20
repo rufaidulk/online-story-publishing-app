@@ -90,7 +90,17 @@ func (s *Story) AddChapter(chapterId primitive.ObjectID, chapterTitle string) {
 	s.Chapters[chapterNo] = chapterInfo
 }
 
-func (s *Story) Update() error {
+func (s *Story) EditChapter(chapterId primitive.ObjectID, chapterTitle string) {
+	for k, v := range s.Chapters {
+		if v.ChapterId == chapterId {
+			v.ChapterTitle = chapterTitle
+			s.Chapters[k] = v
+			break
+		}
+	}
+}
+
+func (s *Story) UpdateDocument() error {
 	s.Slug = strings.ReplaceAll(strings.ToLower(s.Title), " ", "-")
 	s.Slug = fmt.Sprintf("%s-%s", s.Slug, s.Id.Hex())
 	data := bson.D{
