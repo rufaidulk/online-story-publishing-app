@@ -16,8 +16,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const collectionName = "categories"
-
 type Category struct {
 	Id      primitive.ObjectID   `bson:"_id"`
 	Slug    string               `bson:"slug"`
@@ -30,7 +28,7 @@ func NewCategory() *Category {
 }
 
 func (c *Category) LoadById(id primitive.ObjectID) error {
-	coll := getCollection()
+	coll := getCategoryCollection()
 	err := coll.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&c)
 
 	if err != nil && err == mongo.ErrNoDocuments {
@@ -43,14 +41,14 @@ func (c *Category) LoadById(id primitive.ObjectID) error {
 }
 
 func (c *Category) CreateDocument(name string) error {
-	coll := getCollection()
+	coll := getCategoryCollection()
 	c.Id = primitive.NewObjectID()
 	c.Name = name
-	result, err := coll.InsertOne(context.TODO(), &c)
+	_, err := coll.InsertOne(context.TODO(), &c)
 	if err != nil && !mongo.IsDuplicateKeyError(err) {
 		return err
 	}
-	fmt.Println(result)
+
 	if err := c.updateSlug(); err != nil {
 		return err
 	}
@@ -62,7 +60,7 @@ func (c *Category) updateSlug() error {
 	c.Slug = strings.ReplaceAll(strings.ToLower(c.Name), " ", "-")
 	c.Slug = fmt.Sprintf("%s-%s", c.Slug, c.Id.Hex())
 
-	coll := getCollection()
+	coll := getCategoryCollection()
 	filter := bson.D{{"_id", c.Id}}
 	update := bson.D{{"$set", bson.D{{"slug", c.Slug}}}}
 	_, err := coll.UpdateOne(context.TODO(), filter, update)
@@ -73,8 +71,32 @@ func (c *Category) updateSlug() error {
 	return nil
 }
 
+func (c *Category) CheckExistsAllByIds(ids []string) error {
+	coll := getCategoryCollection()
+	var objIds bson.A
+	for _, val := range ids {
+		objId, err := primitive.ObjectIDFromHex(val)
+		if err != nil {
+			return err
+		}
+		objIds = append(objIds, objId)
+	}
+
+	filter := bson.D{{"_id", bson.D{{"$in", objIds}}}}
+	count, err := coll.CountDocuments(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+
+	if count != int64(len(ids)) {
+		return errors.New("all ids are not present")
+	}
+
+	return nil
+}
+
 func CreateCategoryCollectionIndexes() {
-	coll := getCollection()
+	coll := getCategoryCollection()
 	indexView := coll.Indexes()
 	model := mongo.IndexModel{
 		Keys:    bson.D{{"name", 1}},
@@ -89,9 +111,9 @@ func CreateCategoryCollectionIndexes() {
 	fmt.Printf("created indexes %v\n", names)
 }
 
-func getCollection() *mongo.Collection {
+func getCategoryCollection() *mongo.Collection {
 	dbClient := adapters.GetDbClient()
-	coll := dbClient.Database(helper.GetEnv("MONGO_DB")).Collection(collectionName)
+	coll := dbClient.Database(helper.GetEnv("MONGO_DB")).Collection(CategoryCollection)
 
 	return coll
 }
