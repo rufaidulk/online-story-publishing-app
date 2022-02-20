@@ -63,25 +63,40 @@ services:
         volumes:
             - subscriptiontestdata:/var/lib/mysql:delegated
 
-    # subscription_service:
-    #     build: .
-    #     volumes:
-    #         - .:/app
-    #     working_dir: /app
-    #     ports:
-    #         - 4000:4000
+    story_service:
+        build: ./storyservice
+        volumes:
+            - ./storyservice:/app
+        working_dir: /app
+        ports:
+            - 4002:4002
 
-    # # MySQL Service
-    # subscription_service_db:
-    #     image: mysql:8
-    #     ports:
-    #         - 3306:3306
-    #     environment:
-    #         MYSQL_ROOT_PASSWORD: root
-    #     volumes:
-    #         - mysqldata:/var/lib/mysql:delegated
+    # MongoDB Service
+    story_service_db:
+        image: mongo:5.0.6-focal
+        restart: always
+        environment:
+            MONGO_INITDB_ROOT_USERNAME: root
+            MONGO_INITDB_ROOT_PASSWORD: root
+            MONGO_INITDB_DATABASE: story_service
+    
+    mongo-express:
+        image: mongo-express
+        environment:
+            - ME_CONFIG_MONGODB_SERVER=story_service_db
+            - ME_CONFIG_MONGODB_PORT=27017
+            - ME_CONFIG_MONGODB_ENABLE_ADMIN=true
+            - ME_CONFIG_MONGODB_AUTH_DATABASE=admin
+            - ME_CONFIG_MONGODB_AUTH_USERNAME=root
+            - ME_CONFIG_MONGODB_AUTH_PASSWORD=root
+            - ME_CONFIG_BASICAUTH_USERNAME=root
+            - ME_CONFIG_BASICAUTH_PASSWORD=root
+        depends_on:
+            - story_service_db
+        ports:
+          - "8888:8081"
 
-    # # PhpMyAdmin Service
+    # PhpMyAdmin Service
     phpmyadmin:
         image: phpmyadmin/phpmyadmin:5
         ports:
