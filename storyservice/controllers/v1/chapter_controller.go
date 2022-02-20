@@ -75,14 +75,14 @@ func UpdateChapter(ctx echo.Context) error {
 	storyId := ctx.Param("id")
 	story := collections.NewStory()
 	if err := story.LoadById(storyId); err != nil {
-		return ctx.JSON(http.StatusUnprocessableEntity,
-			helper.NewErrorResponse(http.StatusUnprocessableEntity, "invalid story"))
+		return ctx.JSON(http.StatusNotFound,
+			helper.NewErrorResponse(http.StatusNotFound, "requested story not found"))
 	}
 	chapterId := ctx.Param("chapterId")
 	chapter := collections.NewChapter()
 	if err := chapter.LoadById(chapterId); err != nil {
-		return ctx.JSON(http.StatusUnprocessableEntity,
-			helper.NewErrorResponse(http.StatusUnprocessableEntity, "invalid chapter"))
+		return ctx.JSON(http.StatusNotFound,
+			helper.NewErrorResponse(http.StatusNotFound, "requested chapter not found"))
 	}
 	if statusCode, err := validateChapterUpdateForm(story, chapter, form, userUuid); err != nil {
 		return ctx.JSON(statusCode, helper.NewErrorResponse(statusCode, err.Error()))
