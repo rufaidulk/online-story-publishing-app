@@ -43,6 +43,7 @@ func configRoutes(e *echo.Echo, userIdentity echo.MiddlewareFunc) {
 	e.PUT("/story/:id", v1.UpdateStory, userIdentity)
 	e.POST("/story/:id/chapter", v1.CreateChapter, userIdentity)
 	e.PUT("/story/:id/chapter/:chapterId", v1.UpdateChapter, userIdentity)
+	e.GET("/story/:id/chapter/:chapterId", v1.ViewChapter, userIdentity)
 }
 
 func getUserIdentityMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {

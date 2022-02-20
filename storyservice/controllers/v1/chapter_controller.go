@@ -101,6 +101,27 @@ func UpdateChapter(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "chapter updated", res))
 }
 
+func ViewChapter(ctx echo.Context) error {
+	storyId := ctx.Param("id")
+	story := collections.NewStory()
+	if err := story.LoadById(storyId); err != nil {
+		return ctx.JSON(http.StatusNotFound,
+			helper.NewErrorResponse(http.StatusNotFound, "requested story not found"))
+	}
+	chapterId := ctx.Param("chapterId")
+	chapter := collections.NewChapter()
+	if err := chapter.LoadById(chapterId); err != nil {
+		return ctx.JSON(http.StatusNotFound,
+			helper.NewErrorResponse(http.StatusNotFound, "requested chapter not found"))
+	}
+	if statusCode, err := validateChapterViewRequest(story, chapter); err != nil {
+		return ctx.JSON(statusCode, helper.NewErrorResponse(statusCode, err.Error()))
+	}
+
+	res := buildChapterResponse(chapter)
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "chapter details", res))
+}
+
 func validateChapterForm(story *collections.Story, form *ChapterForm, userUuid string) (int, error) {
 	if story.UserUuid != userUuid {
 		return http.StatusForbidden, errors.New("forbidden")
@@ -132,6 +153,14 @@ func validateChapterUpdateForm(story *collections.Story, chapter *collections.Ch
 
 	if form.Body == "" {
 		return http.StatusUnprocessableEntity, errors.New("body is required")
+	}
+
+	return 0, nil
+}
+
+func validateChapterViewRequest(story *collections.Story, chapter *collections.Chapter) (int, error) {
+	if chapter.StoryId != story.Id {
+		return http.StatusForbidden, errors.New("invalid story and chapter")
 	}
 
 	return 0, nil
