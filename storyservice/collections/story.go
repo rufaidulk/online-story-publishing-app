@@ -53,6 +53,7 @@ func (s *Story) LoadById(id string) error {
 }
 
 func (s *Story) SetCategories(categories []string) error {
+	s.Categories = nil
 	for _, val := range categories {
 		objId, err := primitive.ObjectIDFromHex(val)
 		if err != nil {
@@ -104,8 +105,11 @@ func (s *Story) Update() error {
 	data := bson.D{
 		{"slug", s.Slug},
 		{"title", s.Title},
+		{"language_code", s.LanguageCode},
 		{"promotional_title", s.PromotionalTitle},
 		{"promotional_image", s.PromotionalImage},
+		{"categories", s.Categories},
+		{"is_premium", s.IsPremium},
 		{"is_completed", s.IsCompleted},
 	}
 	coll := getStoryCollection()

@@ -20,6 +20,14 @@ type StoryForm struct {
 	IsPremium    bool `json:"is_premium"`
 }
 
+type StoryUpdateForm struct {
+	Title        string
+	LanguageCode string `json:"language_code"`
+	Categories   []string
+	IsSeries     bool `json:"is_series"`
+	IsPremium    bool `json:"is_premium"`
+}
+
 type StoryPromotionalInfoForm struct {
 	PromotionalTitle string                `form:"promotional_title"` //optional
 	PromotionalImage *multipart.FileHeader `form:"promotional_image"` //optional
@@ -121,13 +129,52 @@ func UpdateStoryPromotionalInfo(ctx echo.Context) error {
 	oldFile := story.PromotionalImage
 	story.PromotionalTitle = form.PromotionalTitle
 	story.PromotionalImage = fileName
-	story.Update()
+	if err := story.Update(); err != nil {
+		return err
+	}
 	if oldFile != "" {
 		defer helper.FileDelete(oldFile)
 	}
 
 	storyResponse := buildStoryResponse(story)
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "story promotional info updated", storyResponse))
+}
+
+func UpdateStory(ctx echo.Context) error {
+	userUuid := ctx.Get("userUuid").(string)
+	form := new(StoryUpdateForm)
+	if err := ctx.Bind(form); err != nil {
+		return err
+	}
+	storyId := ctx.Param("id")
+	story := collections.NewStory()
+	if err := story.LoadById(storyId); err != nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, "requested story not found"))
+	}
+	if story.UserUuid != userUuid {
+		return ctx.JSON(http.StatusForbidden,
+			helper.NewErrorResponse(http.StatusForbidden, "forbidden"))
+	}
+
+	if err := validateStoryUpdateForm(form, userUuid); err != nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, err.Error()))
+	}
+	story.Title = form.Title
+	story.LanguageCode = form.LanguageCode
+	story.SetCategories(form.Categories)
+	if !form.IsSeries {
+		story.IsCompleted = true
+	}
+	//todo:: check the eligibility to write premium stories
+	story.IsPremium = form.IsPremium
+	if err := story.Update(); err != nil {
+		return err
+	}
+
+	storyResponse := buildStoryResponse(story)
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "story details updated", storyResponse))
 }
 
 func ViewStory(ctx echo.Context) error {
@@ -139,6 +186,25 @@ func ViewStory(ctx echo.Context) error {
 	}
 	storyResponse := buildStoryResponse(story)
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "story details", storyResponse))
+}
+
+func validateStoryUpdateForm(form *StoryUpdateForm, userUuid string) error {
+	if form.Title == "" {
+		return errors.New("title is required")
+	}
+	if form.LanguageCode == "" {
+		return errors.New("language code is required")
+	}
+	if len(form.Categories) == 0 {
+		return errors.New("at least one category is required")
+	}
+
+	category := collections.NewCategory()
+	if err := category.CheckExistsAllByIds(form.Categories); err != nil {
+		return errors.New("invalid categories")
+	}
+
+	return nil
 }
 
 func validateStoryForm(form *StoryForm, userUuid string) error {
