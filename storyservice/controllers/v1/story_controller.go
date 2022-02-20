@@ -130,6 +130,17 @@ func UpdateStoryPromotionalInfo(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "story promotional info updated", storyResponse))
 }
 
+func ViewStory(ctx echo.Context) error {
+	storyId := ctx.Param("id")
+	story := collections.NewStory()
+	if err := story.LoadById(storyId); err != nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, "requested story not found"))
+	}
+	storyResponse := buildStoryResponse(story)
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "story details", storyResponse))
+}
+
 func validateStoryForm(form *StoryForm, userUuid string) error {
 	if form.Title == "" {
 		return errors.New("title is required")
