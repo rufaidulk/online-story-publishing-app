@@ -2,6 +2,7 @@ package collections
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"storyservice/adapters"
 	"storyservice/helper"
@@ -29,12 +30,26 @@ type Story struct {
 }
 
 type ChapterInfo struct {
-	ChapterId    primitive.ObjectID
-	ChapterTitle string
+	ChapterId    primitive.ObjectID `bson:"chapter_id"`
+	ChapterTitle string             `bson:"chapter_title"`
 }
 
 func NewStory() *Story {
 	return &Story{}
+}
+
+func (s *Story) LoadById(id string) error {
+	coll := getStoryCollection()
+	objId, _ := primitive.ObjectIDFromHex(id)
+	err := coll.FindOne(context.TODO(), bson.M{"_id": objId}).Decode(&s)
+
+	if err != nil && err == mongo.ErrNoDocuments {
+		return errors.New("requested story not found")
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *Story) SetCategories(categories []string) error {
@@ -65,21 +80,6 @@ func (s *Story) CreateDocument() error {
 	return nil
 }
 
-func (s *Story) updateSlug() error {
-	s.Slug = strings.ReplaceAll(strings.ToLower(s.Title), " ", "-")
-	s.Slug = fmt.Sprintf("%s-%s", s.Slug, s.Id.Hex())
-
-	coll := getStoryCollection()
-	filter := bson.D{{"_id", s.Id}}
-	update := bson.D{{"$set", bson.D{{"slug", s.Slug}}}}
-	_, err := coll.UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (s *Story) AddChapter(chapterId primitive.ObjectID, chapterTitle string) error {
 	chapterInfo := ChapterInfo{
 		ChapterId:    chapterId,
@@ -90,6 +90,42 @@ func (s *Story) AddChapter(chapterId primitive.ObjectID, chapterTitle string) er
 	coll := getStoryCollection()
 	filter := bson.D{{"_id", s.Id}}
 	update := bson.D{{"$set", bson.D{{"chapters", s.Chapters}}}}
+	_, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Story) Update() error {
+	s.Slug = strings.ReplaceAll(strings.ToLower(s.Title), " ", "-")
+	s.Slug = fmt.Sprintf("%s-%s", s.Slug, s.Id.Hex())
+	data := bson.D{
+		{"slug", s.Slug},
+		{"title", s.Title},
+		{"promotional_title", s.PromotionalTitle},
+		{"promotional_image", s.PromotionalImage},
+		{"is_completed", s.IsCompleted},
+	}
+	coll := getStoryCollection()
+	filter := bson.D{{"_id", s.Id}}
+	update := bson.D{{"$set", data}}
+	_, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Story) updateSlug() error {
+	s.Slug = strings.ReplaceAll(strings.ToLower(s.Title), " ", "-")
+	s.Slug = fmt.Sprintf("%s-%s", s.Slug, s.Id.Hex())
+
+	coll := getStoryCollection()
+	filter := bson.D{{"_id", s.Id}}
+	update := bson.D{{"$set", bson.D{{"slug", s.Slug}}}}
 	_, err := coll.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err

@@ -10,15 +10,13 @@ import (
 )
 
 type Chapter struct {
-	Id               primitive.ObjectID `bson:"_id"`
-	UserUuid         string             `bson:"user_uuid"`
-	StoryId          primitive.ObjectID `bson:"story_id"`
-	Title            string             `bson:"title"`
-	Body             string             `bson:"body"`
-	PromotionalTitle string             `bson:"promotional_title"`
-	PromotionalImage string             `bson:"promotional_image"`
-	Rating           int8               `bson:"rating"`
-	ReadCount        int64              `bson:"read_count"`
+	Id        primitive.ObjectID `bson:"_id"`
+	UserUuid  string             `bson:"user_uuid"`
+	StoryId   primitive.ObjectID `bson:"story_id"`
+	Title     string             `bson:"title"`
+	Body      string             `bson:"body"`
+	Rating    int8               `bson:"rating"`
+	ReadCount int64              `bson:"read_count"`
 }
 
 func NewChapter() *Chapter {

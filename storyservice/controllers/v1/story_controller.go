@@ -2,11 +2,13 @@ package v1
 
 import (
 	"errors"
+	"mime/multipart"
 	"net/http"
 	"storyservice/collections"
 	"storyservice/helper"
 
 	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type StoryForm struct {
@@ -16,6 +18,32 @@ type StoryForm struct {
 	Categories   []string
 	IsSeries     bool `json:"is_series"`
 	IsPremium    bool `json:"is_premium"`
+}
+
+type StoryPromotionalInfoForm struct {
+	PromotionalTitle string                `form:"promotional_title"` //optional
+	PromotionalImage *multipart.FileHeader `form:"promotional_image"` //optional
+}
+
+type StoryResponse struct {
+	Id               primitive.ObjectID          `json:"_id"`
+	UserUuid         string                      `json:"user_uuid"`
+	Slug             string                      `json:"slug"`
+	Title            string                      `json:"title"`
+	PromotionalTitle string                      `json:"promotional_title"`
+	PromotionalImage string                      `json:"promotional_image"`
+	LanguageCode     string                      `json:"language_code"`
+	Categories       []primitive.ObjectID        `json:"categories"`
+	Chapters         map[int]ChapterInfoResponse `json:"chapters"`
+	IsPremium        bool                        `json:"is_premium"`
+	IsCompleted      bool                        `json:"is_completed"`
+	Rating           int8                        `json:"rating"`
+	AvgReadCount     int64                       `json:"avg_read_count"`
+}
+
+type ChapterInfoResponse struct {
+	ChapterId    primitive.ObjectID `json:"chapter_id"`
+	ChapterTitle string             `json:"chapter_title"`
 }
 
 func CreateStory(ctx echo.Context) error {
@@ -54,8 +82,52 @@ func CreateStory(ctx echo.Context) error {
 	if err := story.AddChapter(chapter.Id, chapter.Title); err != nil {
 		return err
 	}
+	storyResponse := buildStoryResponse(story)
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "story created", storyResponse))
+}
 
-	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "story created", story))
+func UpdateStoryPromotionalInfo(ctx echo.Context) error {
+	form := new(StoryPromotionalInfoForm)
+	if err := ctx.Bind(form); err != nil {
+		return err
+	}
+	if form.PromotionalTitle == "" && form.PromotionalImage == nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, "invalid request"))
+	}
+	storyId := ctx.Param("id")
+	story := collections.NewStory()
+	if err := story.LoadById(storyId); err != nil {
+		return ctx.JSON(http.StatusUnprocessableEntity,
+			helper.NewErrorResponse(http.StatusUnprocessableEntity, "invalid story"))
+	}
+	// Source
+	file, err := ctx.FormFile("promotional_image")
+	if err != nil {
+		return err
+	}
+	allowedImageTypes := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+	}
+	if !allowedImageTypes[file.Header.Get("content-type")] {
+		return ctx.JSON(http.StatusUnsupportedMediaType,
+			helper.NewErrorResponse(http.StatusUnsupportedMediaType, "image type not supported"))
+	}
+	fileName, err := helper.FileUpload(file)
+	if err != nil {
+		return err
+	}
+	oldFile := story.PromotionalImage
+	story.PromotionalTitle = form.PromotionalTitle
+	story.PromotionalImage = fileName
+	story.Update()
+	if oldFile != "" {
+		defer helper.FileDelete(oldFile)
+	}
+
+	storyResponse := buildStoryResponse(story)
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "story promotional info updated", storyResponse))
 }
 
 func validateStoryForm(form *StoryForm, userUuid string) error {
@@ -78,4 +150,33 @@ func validateStoryForm(form *StoryForm, userUuid string) error {
 	}
 
 	return nil
+}
+
+func buildStoryResponse(story *collections.Story) *StoryResponse {
+	infoRes := make(map[int]ChapterInfoResponse)
+	for k, v := range story.Chapters {
+		info := ChapterInfoResponse{
+			ChapterId:    v.ChapterId,
+			ChapterTitle: v.ChapterTitle,
+		}
+		infoRes[k] = info
+	}
+
+	res := StoryResponse{
+		Id:               story.Id,
+		UserUuid:         story.UserUuid,
+		Slug:             story.Slug,
+		Title:            story.Title,
+		PromotionalTitle: story.PromotionalTitle,
+		PromotionalImage: story.PromotionalImage,
+		LanguageCode:     story.LanguageCode,
+		Categories:       story.Categories,
+		Chapters:         infoRes,
+		IsPremium:        story.IsPremium,
+		IsCompleted:      story.IsCompleted,
+		Rating:           story.Rating,
+		AvgReadCount:     story.AvgReadCount,
+	}
+
+	return &res
 }
