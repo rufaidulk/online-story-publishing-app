@@ -87,7 +87,8 @@ func CreateStory(ctx echo.Context) error {
 	if err := chapter.CreateDocument(); err != nil {
 		return err
 	}
-	if err := story.AddChapter(chapter.Id, chapter.Title); err != nil {
+	story.AddChapter(chapter.Id, chapter.Title)
+	if err := story.Update(); err != nil {
 		return err
 	}
 	storyResponse := buildStoryResponse(story)
@@ -95,6 +96,7 @@ func CreateStory(ctx echo.Context) error {
 }
 
 func UpdateStoryPromotionalInfo(ctx echo.Context) error {
+	userUuid := ctx.Get("userUuid").(string)
 	form := new(StoryPromotionalInfoForm)
 	if err := ctx.Bind(form); err != nil {
 		return err
@@ -108,6 +110,10 @@ func UpdateStoryPromotionalInfo(ctx echo.Context) error {
 	if err := story.LoadById(storyId); err != nil {
 		return ctx.JSON(http.StatusUnprocessableEntity,
 			helper.NewErrorResponse(http.StatusUnprocessableEntity, "invalid story"))
+	}
+	if story.UserUuid != userUuid {
+		return ctx.JSON(http.StatusForbidden,
+			helper.NewErrorResponse(http.StatusForbidden, "forbidden"))
 	}
 	// Source
 	file, err := ctx.FormFile("promotional_image")

@@ -41,6 +41,7 @@ func configRoutes(e *echo.Echo, userIdentity echo.MiddlewareFunc) {
 	e.PUT("/story/:id/promotional-info", v1.UpdateStoryPromotionalInfo, userIdentity)
 	e.GET("/story/:id", v1.ViewStory, userIdentity)
 	e.PUT("/story/:id", v1.UpdateStory, userIdentity)
+	e.POST("/story/:id/chapter", v1.CreateChapter, userIdentity)
 }
 
 func getUserIdentityMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {

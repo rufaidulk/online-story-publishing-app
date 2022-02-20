@@ -81,22 +81,13 @@ func (s *Story) CreateDocument() error {
 	return nil
 }
 
-func (s *Story) AddChapter(chapterId primitive.ObjectID, chapterTitle string) error {
+func (s *Story) AddChapter(chapterId primitive.ObjectID, chapterTitle string) {
 	chapterInfo := ChapterInfo{
 		ChapterId:    chapterId,
 		ChapterTitle: chapterTitle,
 	}
 	chapterNo := len(s.Chapters) + 1
 	s.Chapters[chapterNo] = chapterInfo
-	coll := getStoryCollection()
-	filter := bson.D{{"_id", s.Id}}
-	update := bson.D{{"$set", bson.D{{"chapters", s.Chapters}}}}
-	_, err := coll.UpdateOne(context.TODO(), filter, update)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (s *Story) Update() error {
@@ -109,6 +100,7 @@ func (s *Story) Update() error {
 		{"promotional_title", s.PromotionalTitle},
 		{"promotional_image", s.PromotionalImage},
 		{"categories", s.Categories},
+		{"chapters", s.Chapters},
 		{"is_premium", s.IsPremium},
 		{"is_completed", s.IsCompleted},
 	}
