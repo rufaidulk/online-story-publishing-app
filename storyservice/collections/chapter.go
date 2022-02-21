@@ -66,6 +66,17 @@ func (c *Chapter) UpdateDocument() error {
 	return nil
 }
 
+func (c *Chapter) DeleteDocument() error {
+	coll := getChapterCollection()
+	filter := bson.D{{"_id", c.Id}}
+	_, err := coll.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func getChapterCollection() *mongo.Collection {
 	dbClient := adapters.GetDbClient()
 	coll := dbClient.Database(helper.GetEnv("MONGO_DB")).Collection(ChapterCollection)

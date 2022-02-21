@@ -101,6 +101,33 @@ func UpdateChapter(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "chapter updated", res))
 }
 
+func DeleteChapter(ctx echo.Context) error {
+	userUuid := ctx.Get("userUuid").(string)
+	storyId := ctx.Param("id")
+	story := collections.NewStory()
+	if err := story.LoadById(storyId); err != nil {
+		return ctx.JSON(http.StatusNotFound,
+			helper.NewErrorResponse(http.StatusNotFound, "requested story not found"))
+	}
+	chapterId := ctx.Param("chapterId")
+	chapter := collections.NewChapter()
+	if err := chapter.LoadById(chapterId); err != nil {
+		return ctx.JSON(http.StatusNotFound,
+			helper.NewErrorResponse(http.StatusNotFound, "requested chapter not found"))
+	}
+	if statusCode, err := validateChapterDeleteRequest(story, chapter, userUuid); err != nil {
+		return ctx.JSON(statusCode, helper.NewErrorResponse(statusCode, err.Error()))
+	}
+	if err := chapter.DeleteDocument(); err != nil {
+		return err
+	}
+	story.RemoveChapter(chapter.Id)
+	if err := story.UpdateDocument(); err != nil {
+		return err
+	}
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusNoContent, "chapter deleted", ""))
+}
+
 func ViewChapter(ctx echo.Context) error {
 	storyId := ctx.Param("id")
 	story := collections.NewStory()
@@ -153,6 +180,22 @@ func validateChapterUpdateForm(story *collections.Story, chapter *collections.Ch
 
 	if form.Body == "" {
 		return http.StatusUnprocessableEntity, errors.New("body is required")
+	}
+
+	return 0, nil
+}
+
+func validateChapterDeleteRequest(story *collections.Story, chapter *collections.Chapter, userUuid string) (int, error) {
+	if story.UserUuid != userUuid {
+		return http.StatusForbidden, errors.New("forbidden")
+	}
+
+	if chapter.UserUuid != userUuid {
+		return http.StatusForbidden, errors.New("forbidden")
+	}
+
+	if chapter.StoryId != story.Id {
+		return http.StatusForbidden, errors.New("invalid story and chapter")
 	}
 
 	return 0, nil

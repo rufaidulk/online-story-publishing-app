@@ -22,7 +22,7 @@ type Story struct {
 	PromotionalImage string               `bson:"promotional_image"`
 	LanguageCode     string               `bson:"language_code"`
 	Categories       []primitive.ObjectID `bson:"categories"`
-	Chapters         map[int]ChapterInfo  `bson:"chapters"`
+	Chapters         []ChapterInfo        `bson:"chapters"`
 	IsPremium        bool                 `bson:"is_premium"`
 	IsCompleted      bool                 `bson:"is_completed"`
 	Rating           int8                 `bson:"rating"`
@@ -68,7 +68,6 @@ func (s *Story) SetCategories(categories []string) error {
 func (s *Story) CreateDocument() error {
 	coll := getStoryCollection()
 	s.Id = primitive.NewObjectID()
-	s.Chapters = make(map[int]ChapterInfo)
 	_, err := coll.InsertOne(context.TODO(), &s)
 	if err != nil {
 		return err
@@ -86,8 +85,7 @@ func (s *Story) AddChapter(chapterId primitive.ObjectID, chapterTitle string) {
 		ChapterId:    chapterId,
 		ChapterTitle: chapterTitle,
 	}
-	chapterNo := len(s.Chapters) + 1
-	s.Chapters[chapterNo] = chapterInfo
+	s.Chapters = append(s.Chapters, chapterInfo)
 }
 
 func (s *Story) EditChapter(chapterId primitive.ObjectID, chapterTitle string) {
@@ -98,6 +96,19 @@ func (s *Story) EditChapter(chapterId primitive.ObjectID, chapterTitle string) {
 			break
 		}
 	}
+}
+
+func (s *Story) RemoveChapter(chapterId primitive.ObjectID) {
+	var newChapters []ChapterInfo
+	for _, v := range s.Chapters {
+		if v.ChapterId == chapterId {
+			continue
+		}
+		newChapters = append(newChapters, v)
+
+	}
+
+	s.Chapters = newChapters
 }
 
 func (s *Story) UpdateDocument() error {
