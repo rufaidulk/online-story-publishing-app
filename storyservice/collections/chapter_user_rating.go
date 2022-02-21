@@ -63,6 +63,7 @@ func CalculateAvgRatingOfSingleChapter(chapterId primitive.ObjectID) (float64, e
 	if err != nil {
 		return 0, err
 	}
+	defer cursor.Close(context.TODO())
 	var results []bson.M
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		return 0, err

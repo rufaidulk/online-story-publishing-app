@@ -114,6 +114,7 @@ func CalculateAvgRatingOfStory(storyId primitive.ObjectID) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
+	defer cursor.Close(context.TODO())
 	var results []bson.M
 	if err = cursor.All(context.TODO(), &results); err != nil {
 		return 0, err

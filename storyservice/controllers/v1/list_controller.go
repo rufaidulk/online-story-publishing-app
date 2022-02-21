@@ -1,0 +1,52 @@
+package v1
+
+import (
+	"errors"
+	"net/http"
+	"storyservice/collections"
+	"storyservice/helper"
+	"strconv"
+
+	"github.com/labstack/echo/v4"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+func ListStoriesByCategory(ctx echo.Context) error {
+	_, category, statusCode, err := validateListStoriesByCategoryRequest(ctx)
+	if err != nil {
+		return ctx.JSON(statusCode, helper.NewErrorResponse(statusCode, err.Error()))
+	}
+	var limit int64 = 2
+	var skip int64
+	page := ctx.Param("page")
+	if page != "" {
+		p, _ := strconv.ParseInt(page, 10, 64)
+		skip = limit*p - 1
+	}
+
+	data, _ := collections.ListByCategory(category.Id, skip, limit)
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "story list by category", data))
+}
+
+func validateListStoriesByCategoryRequest(ctx echo.Context) (story collections.Story, category collections.Category, statusCode int, err error) {
+	storyId := ctx.Param("id")
+	if err := story.LoadById(storyId); err != nil {
+		return story, category, http.StatusNotFound, errors.New("requested story not found")
+	}
+
+	categoryId, _ := primitive.ObjectIDFromHex(ctx.Param("categoryId"))
+	if err := category.LoadById(categoryId); err != nil {
+		return story, category, http.StatusNotFound, errors.New("requested category not found")
+	}
+	categoryNotFound := true
+	for _, v := range story.Categories {
+		if v == categoryId {
+			categoryNotFound = false
+		}
+	}
+	if categoryNotFound {
+		return story, category, http.StatusUnprocessableEntity, errors.New("invalid story and category")
+	}
+
+	return
+}
