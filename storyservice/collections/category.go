@@ -17,9 +17,10 @@ import (
 )
 
 type Category struct {
-	Id      primitive.ObjectID   `bson:"_id"`
-	Slug    string               `bson:"slug"`
-	Name    string               `bson:"name"`
+	Id   primitive.ObjectID `bson:"_id"`
+	Slug string             `bson:"slug"`
+	Name string             `bson:"name"`
+	//todo:: to be removed, if not needed
 	Stories []primitive.ObjectID `bson:"stories"`
 }
 
@@ -93,6 +94,24 @@ func (c *Category) CheckExistsAllByIds(ids []string) error {
 	}
 
 	return nil
+}
+
+func ListCategories(limit int64) ([]primitive.M, error) {
+	coll := getCategoryCollection()
+	opts := options.Find().SetLimit(limit)
+	filter := bson.M{}
+	cursor, err := coll.Find(context.TODO(), filter, opts)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
 }
 
 func CreateCategoryCollectionIndexes() {

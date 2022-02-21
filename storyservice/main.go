@@ -46,6 +46,7 @@ func main() {
 
 func configRoutes(e *echo.Echo, userIdentity echo.MiddlewareFunc) {
 	e.POST("/category", v1.CreateCategory)
+	e.GET("/category", v1.ListCategories)
 	e.POST("/story", v1.CreateStory, userIdentity)
 	e.PUT("/story/:id/promotional-info", v1.UpdateStoryPromotionalInfo, userIdentity)
 	e.GET("/story/:id", v1.ViewStory, userIdentity)

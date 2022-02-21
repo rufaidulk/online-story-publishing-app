@@ -37,6 +37,11 @@ func CreateCategory(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "category created", res))
 }
 
+func ListCategories(ctx echo.Context) error {
+	data, _ := collections.ListCategories(50)
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "categories list", data))
+}
+
 func validateCategoryForm(form *CategoryForm) error {
 	if form.Name == "" {
 		return errors.New("name is required")
