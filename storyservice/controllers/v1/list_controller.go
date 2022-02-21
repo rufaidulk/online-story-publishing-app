@@ -11,6 +11,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+func ListPremiumStories(ctx echo.Context) error {
+	userUuid := ctx.Get("userUuid").(string)
+	var limit int64 = 15
+	data, _ := collections.ListPremiumStories(userUuid, limit)
+
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "premium stories list", data))
+}
+
 func ListTrendingStories(ctx echo.Context) error {
 	userUuid := ctx.Get("userUuid").(string)
 	var limit int64 = 15
