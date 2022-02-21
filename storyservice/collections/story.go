@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Story struct {
@@ -188,25 +187,6 @@ func (s *Story) updateSlug() error {
 	}
 
 	return nil
-}
-
-func ListByCategory(categoryId primitive.ObjectID, skip int64, limit int64) ([]primitive.M, error) {
-	coll := getStoryCollection()
-	projection := bson.D{{"categories", 0}}
-	opts := options.Find().SetSkip(skip).SetLimit(limit).SetProjection(projection)
-	filter := bson.M{"categories": categoryId}
-	cursor, err := coll.Find(context.TODO(), filter, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(context.TODO())
-
-	var results []bson.M
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return nil, err
-	}
-
-	return results, nil
 }
 
 func getStoryCollection() *mongo.Collection {

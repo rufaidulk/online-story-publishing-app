@@ -3,7 +3,6 @@ package collections
 import (
 	"context"
 	"log"
-	"math"
 	"storyservice/adapters"
 	"storyservice/helper"
 
@@ -44,37 +43,6 @@ func (c *ChapterUserRating) UpsertDocument() error {
 	}
 	log.Println(result)
 	return nil
-}
-
-func CalculateAvgRatingOfSingleChapter(chapterId primitive.ObjectID) (float64, error) {
-	coll := getChapterUserRatingCollection()
-	matchStage := bson.D{
-		{"$match", bson.D{{"chapter_id", chapterId}}},
-	}
-	groupStage := bson.D{
-		{"$group", bson.D{
-			{"_id", "$chapter_id"},
-			{"avg_rating", bson.D{
-				{"$avg", "$rating"},
-			}},
-		}},
-	}
-	cursor, err := coll.Aggregate(context.TODO(), mongo.Pipeline{matchStage, groupStage})
-	if err != nil {
-		return 0, err
-	}
-	defer cursor.Close(context.TODO())
-	var results []bson.M
-	if err = cursor.All(context.TODO(), &results); err != nil {
-		return 0, err
-	}
-	for _, result := range results {
-		rating := result["avg_rating"].(float64)
-		avgRating := math.Round(rating*10) / 10
-		return avgRating, nil
-	}
-
-	return 0, nil
 }
 
 func getChapterUserRatingCollection() *mongo.Collection {
