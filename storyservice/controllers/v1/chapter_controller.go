@@ -27,7 +27,7 @@ type ChapterResponse struct {
 	StoryId   primitive.ObjectID `json:"story_id"`
 	Title     string             `json:"title"`
 	Body      string             `json:"body"`
-	Rating    int8               `json:"rating"`
+	Rating    float64            `json:"rating"`
 	ReadCount int64              `json:"read_count"`
 }
 

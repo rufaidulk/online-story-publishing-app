@@ -45,7 +45,7 @@ type StoryResponse struct {
 	Chapters         map[int]ChapterInfoResponse `json:"chapters"`
 	IsPremium        bool                        `json:"is_premium"`
 	IsCompleted      bool                        `json:"is_completed"`
-	Rating           int8                        `json:"rating"`
+	Rating           float64                     `json:"rating"`
 	AvgReadCount     int64                       `json:"avg_read_count"`
 }
 

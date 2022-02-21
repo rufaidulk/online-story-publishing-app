@@ -45,6 +45,7 @@ func configRoutes(e *echo.Echo, userIdentity echo.MiddlewareFunc) {
 	e.PUT("/story/:id/chapter/:chapterId", v1.UpdateChapter, userIdentity)
 	e.GET("/story/:id/chapter/:chapterId", v1.ViewChapter, userIdentity)
 	e.DELETE("/story/:id/chapter/:chapterId", v1.DeleteChapter, userIdentity)
+	e.POST("/story/:id/chapter/:chapterId/rating", v1.RateChapter, userIdentity)
 }
 
 func getUserIdentityMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {

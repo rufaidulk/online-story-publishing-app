@@ -25,7 +25,7 @@ type Story struct {
 	Chapters         []ChapterInfo        `bson:"chapters"`
 	IsPremium        bool                 `bson:"is_premium"`
 	IsCompleted      bool                 `bson:"is_completed"`
-	Rating           int8                 `bson:"rating"`
+	Rating           float64              `bson:"rating"`
 	AvgReadCount     int64                `bson:"avg_read_count"`
 }
 
@@ -129,6 +129,25 @@ func (s *Story) UpdateDocument() error {
 	filter := bson.D{{"_id", s.Id}}
 	update := bson.D{{"$set", data}}
 	_, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Story) UpdateRating() error {
+	avgStoryRating, err := CalculateAvgRatingOfStory(s.Id)
+	if err != nil {
+		return err
+	}
+	coll := getStoryCollection()
+	data := bson.D{
+		{"rating", avgStoryRating},
+	}
+	filter := bson.D{{"_id", s.Id}}
+	update := bson.D{{"$set", data}}
+	_, err = coll.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}

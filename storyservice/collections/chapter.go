@@ -3,6 +3,7 @@ package collections
 import (
 	"context"
 	"errors"
+	"math"
 	"storyservice/adapters"
 	"storyservice/helper"
 
@@ -17,7 +18,7 @@ type Chapter struct {
 	StoryId   primitive.ObjectID `bson:"story_id"`
 	Title     string             `bson:"title"`
 	Body      string             `bson:"body"`
-	Rating    int8               `bson:"rating"`
+	Rating    float64            `bson:"rating"`
 	ReadCount int64              `bson:"read_count"`
 }
 
@@ -66,6 +67,25 @@ func (c *Chapter) UpdateDocument() error {
 	return nil
 }
 
+func (c *Chapter) UpdateRating() error {
+	avgChapterRating, err := CalculateAvgRatingOfSingleChapter(c.Id)
+	if err != nil {
+		return err
+	}
+	coll := getChapterCollection()
+	data := bson.D{
+		{"rating", avgChapterRating},
+	}
+	filter := bson.D{{"_id", c.Id}}
+	update := bson.D{{"$set", data}}
+	_, err = coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *Chapter) DeleteDocument() error {
 	coll := getChapterCollection()
 	filter := bson.D{{"_id", c.Id}}
@@ -75,6 +95,36 @@ func (c *Chapter) DeleteDocument() error {
 	}
 
 	return nil
+}
+
+func CalculateAvgRatingOfStory(storyId primitive.ObjectID) (float64, error) {
+	coll := getChapterCollection()
+	matchStage := bson.D{
+		{"$match", bson.D{{"story_id", storyId}}},
+	}
+	groupStage := bson.D{
+		{"$group", bson.D{
+			{"_id", "$story_id"},
+			{"avg_rating", bson.D{
+				{"$avg", "$rating"},
+			}},
+		}},
+	}
+	cursor, err := coll.Aggregate(context.TODO(), mongo.Pipeline{matchStage, groupStage})
+	if err != nil {
+		return 0, err
+	}
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return 0, err
+	}
+	for _, result := range results {
+		rating := result["avg_rating"].(float64)
+		avgRating := math.Round(rating*10) / 10
+		return avgRating, nil
+	}
+
+	return 0, nil
 }
 
 func getChapterCollection() *mongo.Collection {
