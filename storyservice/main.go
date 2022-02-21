@@ -26,7 +26,16 @@ func main() {
 	}
 
 	e := echo.New()
+	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
+		log.Println("Path: ", ctx.Path())
+		log.Println("Query Params: ", ctx.QueryParams())
+		log.Println("Path Param Names: ", ctx.ParamNames())
+		log.Println("Path Param Values: ", ctx.ParamValues())
+		log.Println(err)
 
+		// Call the default handler to return the HTTP response
+		e.DefaultHTTPErrorHandler(err, ctx)
+	}
 	// Route level middleware
 	userIdentity := getUserIdentityMiddleware()
 
@@ -45,6 +54,7 @@ func configRoutes(e *echo.Echo, userIdentity echo.MiddlewareFunc) {
 	e.PUT("/story/:id/chapter/:chapterId", v1.UpdateChapter, userIdentity)
 	e.GET("/story/:id/chapter/:chapterId", v1.ViewChapter, userIdentity)
 	e.DELETE("/story/:id/chapter/:chapterId", v1.DeleteChapter, userIdentity)
+	e.POST("/story/:id/chapter/:chapterId/read-log", v1.CreateChapterReadLog, userIdentity)
 	e.POST("/story/:id/chapter/:chapterId/rating", v1.RateChapter, userIdentity)
 	e.GET("/story/:id/category/:categoryId/:page", v1.ListStoriesByCategory, userIdentity)
 }

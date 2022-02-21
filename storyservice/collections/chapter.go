@@ -97,6 +97,51 @@ func (c *Chapter) DeleteDocument() error {
 	return nil
 }
 
+func (c *Chapter) IncrementReadCount() error {
+	coll := getChapterCollection()
+	data := bson.D{
+		{"read_count", 1},
+	}
+	filter := bson.D{{"_id", c.Id}}
+	update := bson.D{{"$inc", data}}
+	_, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CalculateAvgReadCountOfStory(storyId primitive.ObjectID) (int64, error) {
+	coll := getChapterCollection()
+	matchStage := bson.D{
+		{"$match", bson.D{{"story_id", storyId}}},
+	}
+	groupStage := bson.D{
+		{"$group", bson.D{
+			{"_id", "$story_id"},
+			{"avg_read_count", bson.D{
+				{"$avg", "$read_count"},
+			}},
+		}},
+	}
+	cursor, err := coll.Aggregate(context.TODO(), mongo.Pipeline{matchStage, groupStage})
+	if err != nil {
+		return 0, err
+	}
+	defer cursor.Close(context.TODO())
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return 0, err
+	}
+	for _, result := range results {
+		readCount := result["avg_read_count"].(float64)
+		return int64(readCount), nil
+	}
+
+	return 0, nil
+}
+
 func CalculateAvgRatingOfStory(storyId primitive.ObjectID) (float64, error) {
 	coll := getChapterCollection()
 	matchStage := bson.D{

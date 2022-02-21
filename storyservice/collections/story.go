@@ -156,6 +156,25 @@ func (s *Story) UpdateRating() error {
 	return nil
 }
 
+func (s *Story) UpdateAvgReadCount() error {
+	avgReadCount, err := CalculateAvgReadCountOfStory(s.Id)
+	if err != nil {
+		return err
+	}
+	coll := getStoryCollection()
+	data := bson.D{
+		{"avg_read_count", avgReadCount},
+	}
+	filter := bson.D{{"_id", s.Id}}
+	update := bson.D{{"$set", data}}
+	_, err = coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Story) updateSlug() error {
 	s.Slug = strings.ReplaceAll(strings.ToLower(s.Title), " ", "-")
 	s.Slug = fmt.Sprintf("%s-%s", s.Slug, s.Id.Hex())
