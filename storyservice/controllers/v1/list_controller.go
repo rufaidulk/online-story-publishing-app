@@ -11,6 +11,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+func ListTrendingStories(ctx echo.Context) error {
+	userUuid := ctx.Get("userUuid").(string)
+	var limit int64 = 15
+	data, _ := collections.ListTrendingStories(userUuid, limit)
+
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "trending stories list", data))
+}
+
 func ListStoriesByCategory(ctx echo.Context) error {
 	_, category, statusCode, err := validateListStoriesByCategoryRequest(ctx)
 	if err != nil {
