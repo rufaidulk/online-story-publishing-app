@@ -19,6 +19,14 @@ func ListTrendingStories(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "trending stories list", data))
 }
 
+func ListMostRatedStories(ctx echo.Context) error {
+	userUuid := ctx.Get("userUuid").(string)
+	var limit int64 = 15
+	data, _ := collections.ListTrendingStories(userUuid, limit)
+
+	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "top stories list", data))
+}
+
 func ListStoriesByCategory(ctx echo.Context) error {
 	_, category, statusCode, err := validateListStoriesByCategoryRequest(ctx)
 	if err != nil {
