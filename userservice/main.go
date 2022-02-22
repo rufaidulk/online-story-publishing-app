@@ -39,6 +39,8 @@ func configRoutes(e *echo.Echo, jwtAuth echo.MiddlewareFunc) {
 	e.POST("/register", controllers.Registration)
 	e.POST("/authenticate", controllers.Login)
 	e.POST("/authorize", controllers.AuthorizeUser, jwtAuth)
+	e.GET("/user-profile", controllers.ViewUserProfile, jwtAuth)
+	e.PUT("/user-profile", controllers.UpdateUserProfile, jwtAuth)
 	e.POST("/user/:uuid/follow", controllers.CreateFollower, jwtAuth)
 	e.DELETE("/user/:uuid/follow", controllers.DeleteFollower, jwtAuth)
 }
@@ -79,7 +81,7 @@ func validateUserJwt(ctx echo.Context, authorization string, db *gorm.DB) (userD
 	user := models.NewUserData()
 	uuid := models.NewUuid(userDetails.Uuid)
 	dbErr := db.Where("email = ? AND uuid = ?", userDetails.Email, uuid).Take(&user).Error
-	if errors.Is(dbErr, gorm.ErrRecordNotFound) {
+	if dbErr != nil {
 		return userDetails, errors.New("Corrupted JWT.")
 	}
 

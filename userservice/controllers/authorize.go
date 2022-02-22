@@ -10,6 +10,6 @@ import (
 func AuthorizeUser(ctx echo.Context) error {
 	userDetails := ctx.Get("userDetails").(helper.UserDetails)
 
-	return ctx.JSON(http.StatusCreated,
-		helper.NewSuccessResponse(http.StatusCreated, "Authorized", userDetails))
+	return ctx.JSON(http.StatusOK,
+		helper.NewSuccessResponse(http.StatusOK, "authorized", userDetails))
 }

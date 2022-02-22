@@ -7,6 +7,7 @@ import (
 type UserProfile struct {
 	Id              int64
 	UserId          int64
+	PenName         string
 	Description     string
 	IsAuthor        bool
 	IsPremiumAuthor bool
