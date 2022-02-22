@@ -40,6 +40,7 @@ func configRoutes(e *echo.Echo, jwtAuth echo.MiddlewareFunc) {
 	e.POST("/authenticate", controllers.Login)
 	e.POST("/authorize", controllers.AuthorizeUser, jwtAuth)
 	e.POST("/user/:uuid/follow", controllers.CreateFollower, jwtAuth)
+	e.DELETE("/user/:uuid/follow", controllers.DeleteFollower, jwtAuth)
 }
 
 func getUserJwtMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {
