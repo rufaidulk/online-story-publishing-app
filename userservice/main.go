@@ -17,6 +17,16 @@ import (
 func main() {
 	e := echo.New()
 
+	e.HTTPErrorHandler = func(err error, ctx echo.Context) {
+		log.Println("Path: ", ctx.Path())
+		log.Println("Query Params: ", ctx.QueryParams())
+		log.Println("Path Param Names: ", ctx.ParamNames())
+		log.Println("Path Param Values: ", ctx.ParamValues())
+		log.Println(err)
+
+		// Call the default handler to return the HTTP response
+		e.DefaultHTTPErrorHandler(err, ctx)
+	}
 	// Route level middleware
 	userJwtAuth := getUserJwtMiddleware()
 
@@ -29,6 +39,7 @@ func configRoutes(e *echo.Echo, jwtAuth echo.MiddlewareFunc) {
 	e.POST("/register", controllers.Registration)
 	e.POST("/authenticate", controllers.Login)
 	e.POST("/authorize", controllers.AuthorizeUser, jwtAuth)
+	e.POST("/user/:uuid/follow", controllers.CreateFollower, jwtAuth)
 }
 
 func getUserJwtMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {
@@ -37,7 +48,7 @@ func getUserJwtMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {
 			db := adapters.GetDbHandle(ctx)
 			log.Println("Verifying JWT...")
 			authorization := ctx.Request().Header.Get("authorization")
-			if userDetails, err := validateUserJwt(authorization, db); err != nil {
+			if userDetails, err := validateUserJwt(ctx, authorization, db); err != nil {
 				return ctx.JSON(http.StatusUnauthorized,
 					helper.NewErrorResponse(http.StatusUnauthorized, err.Error()))
 			} else {
@@ -49,7 +60,7 @@ func getUserJwtMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {
 	}
 }
 
-func validateUserJwt(authorization string, db *gorm.DB) (userDetails helper.UserDetails, err error) {
+func validateUserJwt(ctx echo.Context, authorization string, db *gorm.DB) (userDetails helper.UserDetails, err error) {
 	if len(authorization) == 0 {
 		return userDetails, errors.New("Unauthorized")
 	}
@@ -71,5 +82,6 @@ func validateUserJwt(authorization string, db *gorm.DB) (userDetails helper.User
 		return userDetails, errors.New("Corrupted JWT.")
 	}
 
+	ctx.Set("userData", *user)
 	return
 }
