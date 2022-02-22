@@ -41,10 +41,17 @@ func Registration(ctx echo.Context) error {
 	user.Status = 10
 	user.SetUuid()
 	user.SetUserActive()
-
-	if err := db.Create(&user).Error; err != nil {
+	tx := db.Begin()
+	if err := tx.Create(&user).Error; err != nil {
 		return err
 	}
+	userProfile := models.NewUserProfile()
+	userProfile.UserId = user.Id
+	if err := tx.Create(&userProfile).Error; err != nil {
+		return err
+	}
+
+	tx.Commit()
 	userDetails := helper.UserDetails{
 		Uuid:  user.Uuid.UuidStr(),
 		Name:  user.Name,
