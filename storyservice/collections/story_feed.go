@@ -2,6 +2,7 @@ package collections
 
 import (
 	"context"
+	"errors"
 	"storyservice/adapters"
 	"storyservice/helper"
 
@@ -14,13 +15,32 @@ import (
 type StoryFeed struct {
 	Id                              primitive.ObjectID   `bson:"_id"`
 	UserUuid                        string               `bson:"user_uuid"`
+	ReadStatus                      UserStoryReadStatus  `bson:"read_status"`
 	InterestedCategories            []primitive.ObjectID `bson:"interested_categories"`
 	FollowingAuthors                []string             `bson:"following_authors"`
 	CategoriesBasedOnReadingHistory []primitive.ObjectID `bson:"categories_based_on_reading_history"`
 }
 
+type UserStoryReadStatus struct {
+	StoryId   primitive.ObjectID `bson:"story_id"`
+	ChapterId primitive.ObjectID `bson:"chapter_id"`
+}
+
 func NewStoryFeed() *StoryFeed {
 	return &StoryFeed{}
+}
+
+func (s *StoryFeed) LoadByUser(userUuid string) error {
+	coll := getStoryFeedCollection()
+	err := coll.FindOne(context.TODO(), bson.M{"user_uuid": userUuid}).Decode(&s)
+
+	if err != nil && err == mongo.ErrNoDocuments {
+		return errors.New("requested story not found")
+	} else if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *StoryFeed) UpsertDocument() error {
@@ -35,6 +55,50 @@ func (s *StoryFeed) UpsertDocument() error {
 	update := bson.D{{"$set", data}}
 	opts := options.Update().SetUpsert(true)
 	_, err := coll.UpdateOne(context.TODO(), filter, update, opts)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StoryFeed) AddFollowingAuthorToDocument() error {
+	coll := getStoryFeedCollection()
+	data := bson.D{
+		{"following_authors", s.FollowingAuthors},
+	}
+	filter := bson.D{
+		{"_id", s.Id},
+	}
+	update := bson.D{{"$set", data}}
+	_, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *StoryFeed) RemoveFollowingAuthorFromDocument(authorUuid string) error {
+	var newAuthors []string
+	for _, v := range s.FollowingAuthors {
+		if v == authorUuid {
+			continue
+		}
+		newAuthors = append(newAuthors, v)
+
+	}
+	s.FollowingAuthors = newAuthors
+
+	coll := getStoryFeedCollection()
+	data := bson.D{
+		{"following_authors", s.FollowingAuthors},
+	}
+	filter := bson.D{
+		{"_id", s.Id},
+	}
+	update := bson.D{{"$set", data}}
+	_, err := coll.UpdateOne(context.TODO(), filter, update)
 	if err != nil {
 		return err
 	}

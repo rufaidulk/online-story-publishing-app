@@ -8,3 +8,8 @@ type RabbitmqProducer interface {
 	CreateExchange() RabbitmqProducer
 	PublishMessage()
 }
+
+type EventData struct {
+	EventType string
+	Data      map[string]interface{}
+}

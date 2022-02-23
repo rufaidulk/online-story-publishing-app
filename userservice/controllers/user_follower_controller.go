@@ -6,6 +6,7 @@ import (
 	"userservice/adapters"
 	"userservice/helper"
 	"userservice/models"
+	"userservice/msgbroker"
 
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
@@ -14,6 +15,7 @@ import (
 // Person A follows Person B and C follows A. Then A has a follower C and B is followee of A.
 func CreateFollower(ctx echo.Context) error {
 	db := adapters.GetDbHandle(ctx)
+	userDetails := ctx.Get("userDetails").(helper.UserDetails)
 	user, ok := ctx.Get("userData").(models.UserData)
 	if !ok {
 		return errors.New("type assertion failed")
@@ -31,12 +33,14 @@ func CreateFollower(ctx echo.Context) error {
 		return err
 	}
 
+	defer msgbroker.UserFollowEventDispatch(userDetails.Uuid, ctx.Param("uuid"))
 	return ctx.JSON(http.StatusCreated, helper.NewSuccessResponse(http.StatusCreated, "added follower", ""))
 }
 
 // Person A follows Person B and C follows A. Then A has a follower C and B is followee of A.
 func DeleteFollower(ctx echo.Context) error {
 	db := adapters.GetDbHandle(ctx)
+	userDetails := ctx.Get("userDetails").(helper.UserDetails)
 	user, ok := ctx.Get("userData").(models.UserData)
 	if !ok {
 		return errors.New("type assertion failed")
@@ -49,7 +53,7 @@ func DeleteFollower(ctx echo.Context) error {
 	if err := db.Delete(&userFollower).Error; err != nil {
 		return err
 	}
-
+	defer msgbroker.UserUnFollowEventDispatch(userDetails.Uuid, ctx.Param("uuid"))
 	return ctx.JSON(http.StatusNoContent, helper.NewSuccessResponse(http.StatusNoContent, "removed follower", ""))
 }
 

@@ -9,19 +9,17 @@ import (
 
 type UserFollowEvent struct {
 	EventChannel *amqp.Channel
-	// EventType    string
-	EventData []byte
+	EventData    []byte
 }
 
-type UserFollowEventData struct {
-	UserUuid     string
-	FollowerUuid string
-}
+func NewUserFollowEvent(ch *amqp.Channel, eventType string, userUuid string, followerUuid string) *UserFollowEvent {
+	msg := make(map[string]interface{})
+	msg["user_uuid"] = userUuid
+	msg["follower_uuid"] = followerUuid
 
-func NewUserFollowEvent(ch *amqp.Channel, userUuid string, followerUuid string) *UserFollowEvent {
-	data := &UserFollowEventData{
-		UserUuid:     userUuid,
-		FollowerUuid: followerUuid,
+	data := &EventData{
+		EventType: eventType,
+		Data:      msg,
 	}
 	byteData, err := json.Marshal(data)
 	if err != nil {
