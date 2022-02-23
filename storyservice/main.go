@@ -67,6 +67,7 @@ func configRoutes(e *echo.Echo, userIdentity echo.MiddlewareFunc) {
 	e.GET("/story/trend", v1.ListTrendingStories, userIdentity)
 	e.GET("/story/top", v1.ListMostRatedStories, userIdentity)
 	e.GET("/story/premium", v1.ListPremiumStories, userIdentity)
+	e.POST("/category/user-interest", v1.CreateInterestedCategoriesInStoryFeed, userIdentity)
 }
 
 func getUserIdentityMiddleware() func(next echo.HandlerFunc) echo.HandlerFunc {

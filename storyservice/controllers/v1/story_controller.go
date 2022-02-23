@@ -92,7 +92,7 @@ func CreateStory(ctx echo.Context) error {
 		return err
 	}
 	storyResponse := buildStoryResponse(story)
-	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "story created", storyResponse))
+	return ctx.JSON(http.StatusCreated, helper.NewSuccessResponse(http.StatusCreated, "story created", storyResponse))
 }
 
 func UpdateStoryPromotionalInfo(ctx echo.Context) error {
