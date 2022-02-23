@@ -6,6 +6,7 @@ import (
 	"net/http"
 	v1 "storyservice/controllers/v1"
 	"storyservice/helper"
+	"storyservice/msgbroker"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -23,6 +24,11 @@ func main() {
 	if *modeFlag == ModeSetup {
 		InitSetup()
 		return
+	}
+
+	//rabbitmq consumers
+	for _, v := range msgbroker.Consumers {
+		go v()
 	}
 
 	e := echo.New()
