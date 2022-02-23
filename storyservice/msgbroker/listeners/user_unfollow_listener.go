@@ -5,11 +5,11 @@ import (
 	"storyservice/collections"
 )
 
-type UserUnfollowEventData struct {
+type UserUnfollowEventListener struct {
 	Data map[string]interface{}
 }
 
-func (u *UserUnfollowEventData) Handle() {
+func (u *UserUnfollowEventListener) Handle() {
 	log.Println("Executing the user unfollow event listener...")
 	storyFeed := collections.NewStoryFeed()
 	storyFeed.LoadByUser(u.Data["user_uuid"].(string))

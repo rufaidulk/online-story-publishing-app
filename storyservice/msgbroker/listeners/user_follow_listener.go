@@ -5,11 +5,11 @@ import (
 	"storyservice/collections"
 )
 
-type UserFollowEventData struct {
+type UserFollowEventListener struct {
 	Data map[string]interface{}
 }
 
-func (u *UserFollowEventData) Handle() {
+func (u *UserFollowEventListener) Handle() {
 	log.Println("Executing the user follow event listener...")
 	storyFeed := collections.NewStoryFeed()
 	storyFeed.LoadByUser(u.Data["user_uuid"].(string))
