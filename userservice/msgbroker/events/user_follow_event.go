@@ -34,13 +34,13 @@ func NewUserFollowEvent(ch *amqp.Channel, eventType string, userUuid string, fol
 
 func (u *UserFollowEvent) CreateExchange() RabbitmqProducer {
 	err := u.EventChannel.ExchangeDeclare(
-		exchangeName, // name
-		"direct",     // type
-		true,         // durable
-		false,        // auto-deleted
-		false,        // internal
-		false,        // no-wait
-		nil,          // arguments
+		ServiceExchangeName, // name
+		"direct",            // type
+		true,                // durable
+		false,               // auto-deleted
+		false,               // internal
+		false,               // no-wait
+		nil,                 // arguments
 	)
 
 	if err != nil {
@@ -53,10 +53,10 @@ func (u *UserFollowEvent) CreateExchange() RabbitmqProducer {
 
 func (u *UserFollowEvent) PublishMessage() {
 	err := u.EventChannel.Publish(
-		exchangeName, // exchange
-		routingKey,   // routing key
-		false,        // mandatory
-		false,        // immediate
+		ServiceExchangeName, // exchange
+		ServiceRoutingKey,   // routing key
+		false,               // mandatory
+		false,               // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        u.EventData,

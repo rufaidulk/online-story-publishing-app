@@ -1,4 +1,4 @@
-package msgbroker
+package consumers
 
 import (
 	"encoding/json"
@@ -10,20 +10,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-const queueName = "story_worker"
-const exchangeName = "user_exchange"
-const routingKey = "story_feed"
-
-var Consumers [1]func() = [1]func(){
-	StoryFeedListener,
-}
-
-type EventData struct {
-	EventType string
-	Data      map[string]interface{}
-}
-
-func StoryFeedListener() {
+func UserServiceListener() {
 	ch, err := adapters.GetRabbitmqConn().Channel()
 	if err != nil {
 		log.Println("Failed to open a channel")
@@ -54,7 +41,7 @@ func StoryFeedListener() {
 			e := EventData{}
 			json.Unmarshal(d.Body, &e)
 			log.Println(e)
-			if listener, err := callListenerByEventType(&e); err != nil {
+			if listener, err := callUserServiceListenerByEventType(&e); err != nil {
 				log.Fatal(err)
 			} else {
 				go listener.Handle()
@@ -66,7 +53,7 @@ func StoryFeedListener() {
 	<-forever
 }
 
-func callListenerByEventType(eventData *EventData) (listeners.Listener, error) {
+func callUserServiceListenerByEventType(eventData *EventData) (listeners.Listener, error) {
 	var listener listeners.Listener
 	switch eventData.EventType {
 	case "follow":
@@ -81,13 +68,13 @@ func callListenerByEventType(eventData *EventData) (listeners.Listener, error) {
 
 func createExchange(ch *amqp.Channel) {
 	err := ch.ExchangeDeclare(
-		exchangeName, // name
-		"direct",     // type
-		true,         // durable
-		false,        // auto-deleted
-		false,        // internal
-		false,        // no-wait
-		nil,          // arguments
+		UserServiceExchangeName, // name
+		"direct",                // type
+		true,                    // durable
+		false,                   // auto-deleted
+		false,                   // internal
+		false,                   // no-wait
+		nil,                     // arguments
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -96,12 +83,12 @@ func createExchange(ch *amqp.Channel) {
 
 func createQueue(ch *amqp.Channel) *amqp.Queue {
 	q, err := ch.QueueDeclare(
-		queueName, // name
-		false,     // durable
-		false,     // delete when unused
-		true,      // exclusive
-		false,     // no-wait
-		nil,       // arguments
+		UserServiceQueueName, // name
+		false,                // durable
+		false,                // delete when unused
+		true,                 // exclusive
+		false,                // no-wait
+		nil,                  // arguments
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -111,9 +98,9 @@ func createQueue(ch *amqp.Channel) *amqp.Queue {
 
 func bindQueue(ch *amqp.Channel, q *amqp.Queue) {
 	err := ch.QueueBind(
-		q.Name,       // queue name
-		routingKey,   // routing key
-		exchangeName, // exchange
+		q.Name,                  // queue name
+		UserServiceRoutingKey,   // routing key
+		UserServiceExchangeName, // exchange
 		false,
 		nil)
 

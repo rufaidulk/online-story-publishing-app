@@ -6,7 +6,7 @@ import (
 	"net/http"
 	v1 "storyservice/controllers/v1"
 	"storyservice/helper"
-	"storyservice/msgbroker"
+	"storyservice/msgbroker/consumers"
 
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -27,7 +27,7 @@ func main() {
 	}
 
 	//rabbitmq consumers
-	for _, v := range msgbroker.Consumers {
+	for _, v := range consumers.Consumers {
 		go v()
 	}
 

@@ -1,8 +1,7 @@
 package events
 
-// const queueName = "story_worker"
-const exchangeName = "user_exchange"
-const routingKey = "story_feed"
+const ServiceExchangeName = "user_service_exchange"
+const ServiceRoutingKey = "user_service"
 
 type RabbitmqProducer interface {
 	CreateExchange() RabbitmqProducer
