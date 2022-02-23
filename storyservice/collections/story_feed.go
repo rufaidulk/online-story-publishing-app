@@ -142,6 +142,51 @@ func (s *StoryFeed) SetCategories(categories []string) error {
 	return nil
 }
 
+func (s *StoryFeed) FetchRecommendedStories() ([]bson.M, error) {
+	m := make(map[primitive.ObjectID]bool)
+	var categories []primitive.ObjectID
+	for _, v := range s.InterestedCategories {
+		m[v] = true
+		categories = append(categories, v)
+	}
+	for _, v := range s.CategoriesBasedOnReadingHistory {
+		if m[v] {
+			continue
+		}
+		m[v] = true
+		categories = append(categories, v)
+	}
+	coll := getCategoryCollection()
+	var objIds bson.A
+	for _, val := range categories {
+		objIds = append(objIds, val)
+	}
+	matchStage := bson.D{
+		{"$match", bson.D{{"_id", bson.D{{"$in", objIds}}}}},
+	}
+	lookupStage := bson.D{
+		{"$lookup", bson.D{
+			{"from", "stories"},
+			{"as", "stories"},
+			{"pipeline", bson.A{
+				bson.D{{"$sort", bson.D{{"_id", -1}}}},
+				bson.D{{"$limit", 1}},
+			}},
+		}},
+	}
+	cursor, err := coll.Aggregate(context.TODO(), mongo.Pipeline{matchStage, lookupStage})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+	var results []bson.M
+	if err = cursor.All(context.TODO(), &results); err != nil {
+		return nil, err
+	}
+
+	return results, nil
+}
+
 func getStoryFeedCollection() *mongo.Collection {
 	dbClient := adapters.GetDbClient()
 	coll := dbClient.Database(helper.GetEnv("MONGO_DB")).Collection(StoryFeedCollection)

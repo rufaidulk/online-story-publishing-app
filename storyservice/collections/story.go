@@ -52,6 +52,19 @@ func (s *Story) LoadById(id string) error {
 	return nil
 }
 
+func (s *Story) LoadByObjectId(id primitive.ObjectID) error {
+	coll := getStoryCollection()
+	err := coll.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&s)
+
+	if err != nil && err == mongo.ErrNoDocuments {
+		return errors.New("requested story not found")
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Story) SetCategories(categories []string) error {
 	s.Categories = nil
 	for _, val := range categories {

@@ -13,6 +13,31 @@ type StoryFeedInterestedCategoriesForm struct {
 	Categories []string
 }
 
+func FetchStoryFeed(ctx echo.Context) error {
+	userUuid := ctx.Get("userUuid").(string)
+	storyFeed := collections.NewStoryFeed()
+	storyFeed.LoadByUser(userUuid)
+	res := make(map[string]interface{})
+	if !storyFeed.ReadStatus.StoryId.IsZero() && !storyFeed.ReadStatus.ChapterId.IsZero() {
+		currentStory := collections.NewStory()
+		if err := currentStory.LoadByObjectId(storyFeed.ReadStatus.StoryId); err != nil {
+			return err
+		}
+		currentChapter := collections.NewChapter()
+		if err := currentChapter.LoadByObjectId(storyFeed.ReadStatus.ChapterId); err != nil {
+			return err
+		}
+		res["current_story"] = buildStoryResponse(currentStory)
+		res["current_chapter"] = buildChapterResponse(currentChapter)
+	}
+	data, err := storyFeed.FetchRecommendedStories()
+	if err != nil {
+		return err
+	}
+	res["recommendations"] = data
+	return ctx.JSON(http.StatusCreated, helper.NewSuccessResponse(http.StatusOK, "story feed", res))
+}
+
 func CreateInterestedCategoriesInStoryFeed(ctx echo.Context) error {
 	userUuid := ctx.Get("userUuid").(string)
 	form := new(StoryFeedInterestedCategoriesForm)

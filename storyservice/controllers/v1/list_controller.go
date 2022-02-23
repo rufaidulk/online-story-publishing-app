@@ -48,7 +48,7 @@ func ListStoriesByCategory(ctx echo.Context) error {
 		skip = limit*p - 1
 	}
 
-	data, _ := collections.ListByCategory(category.Id, skip, limit)
+	data, _ := collections.ListStoriesByCategory(category.Id, skip, limit)
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "story list by category", data))
 }
 

@@ -191,7 +191,7 @@ func CalculateAvgRatingOfStory(storyId primitive.ObjectID) (float64, error) {
 	return 0, nil
 }
 
-func ListByCategory(categoryId primitive.ObjectID, skip int64, limit int64) ([]primitive.M, error) {
+func ListStoriesByCategory(categoryId primitive.ObjectID, skip int64, limit int64) ([]primitive.M, error) {
 	coll := getStoryCollection()
 	projection := bson.D{{"categories", 0}}
 	opts := options.Find().SetSkip(skip).SetLimit(limit).SetProjection(projection)

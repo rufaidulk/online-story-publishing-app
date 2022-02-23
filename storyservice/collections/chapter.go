@@ -39,6 +39,19 @@ func (c *Chapter) LoadById(id string) error {
 	return nil
 }
 
+func (c *Chapter) LoadByObjectId(id primitive.ObjectID) error {
+	coll := getChapterCollection()
+	err := coll.FindOne(context.TODO(), bson.M{"_id": id}).Decode(&c)
+
+	if err != nil && err == mongo.ErrNoDocuments {
+		return errors.New("requested chapter not found")
+	} else if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (c *Chapter) CreateDocument() error {
 	coll := getChapterCollection()
 	c.Id = primitive.NewObjectID()
