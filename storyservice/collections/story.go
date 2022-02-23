@@ -189,6 +189,46 @@ func (s *Story) updateSlug() error {
 	return nil
 }
 
+func (s *Story) AddStoryToCategoryDocument() error {
+	coll := getCategoryCollection()
+	var objIds bson.A
+	for _, val := range s.Categories {
+		objIds = append(objIds, val)
+	}
+
+	filter := bson.D{{"_id", bson.D{{"$in", objIds}}}}
+	data := bson.D{
+		{"stories", s.Id},
+	}
+	update := bson.D{{"$addToSet", data}}
+	_, err := coll.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Story) RemoveStoryFromCategoryDocument(removedCategories []primitive.ObjectID) error {
+	coll := getCategoryCollection()
+	var objIds bson.A
+	for _, val := range removedCategories {
+		objIds = append(objIds, val)
+	}
+
+	filter := bson.D{{"_id", bson.D{{"$in", objIds}}}}
+	data := bson.D{
+		{"stories", s.Id},
+	}
+	update := bson.D{{"$pull", data}}
+	_, err := coll.UpdateMany(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func getStoryCollection() *mongo.Collection {
 	dbClient := adapters.GetDbClient()
 	coll := dbClient.Database(helper.GetEnv("MONGO_DB")).Collection(StoryCollection)

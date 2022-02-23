@@ -91,6 +91,9 @@ func CreateStory(ctx echo.Context) error {
 	if err := story.UpdateDocument(); err != nil {
 		return err
 	}
+	if err := story.AddStoryToCategoryDocument(); err != nil {
+		return err
+	}
 	storyResponse := buildStoryResponse(story)
 	return ctx.JSON(http.StatusCreated, helper.NewSuccessResponse(http.StatusCreated, "story created", storyResponse))
 }
@@ -167,6 +170,7 @@ func UpdateStory(ctx echo.Context) error {
 		return ctx.JSON(http.StatusUnprocessableEntity,
 			helper.NewErrorResponse(http.StatusUnprocessableEntity, err.Error()))
 	}
+	oldCategories := story.Categories
 	story.Title = form.Title
 	story.LanguageCode = form.LanguageCode
 	story.SetCategories(form.Categories)
@@ -178,7 +182,12 @@ func UpdateStory(ctx echo.Context) error {
 	if err := story.UpdateDocument(); err != nil {
 		return err
 	}
-
+	if removedCategories, ok := isCategoriesChanged(oldCategories, story.Categories); ok {
+		story.RemoveStoryFromCategoryDocument(removedCategories)
+	}
+	if err := story.AddStoryToCategoryDocument(); err != nil {
+		return err
+	}
 	storyResponse := buildStoryResponse(story)
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusOK, "story details updated", storyResponse))
 }
@@ -262,4 +271,23 @@ func buildStoryResponse(story *collections.Story) *StoryResponse {
 	}
 
 	return &res
+}
+
+func isCategoriesChanged(oldCategories, newCategories []primitive.ObjectID) ([]primitive.ObjectID, bool) {
+	m := make(map[primitive.ObjectID]bool)
+	for _, v := range oldCategories {
+		m[v] = true
+	}
+	for _, v := range newCategories {
+		if _, ok := m[v]; ok {
+			m[v] = false
+		}
+	}
+	var removedCategories []primitive.ObjectID
+	for k, v := range m {
+		if v {
+			removedCategories = append(removedCategories, k)
+		}
+	}
+	return removedCategories, len(removedCategories) != 0
 }

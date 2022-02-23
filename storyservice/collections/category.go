@@ -17,10 +17,9 @@ import (
 )
 
 type Category struct {
-	Id   primitive.ObjectID `bson:"_id"`
-	Slug string             `bson:"slug"`
-	Name string             `bson:"name"`
-	//todo:: to be removed, if not needed
+	Id      primitive.ObjectID   `bson:"_id"`
+	Slug    string               `bson:"slug"`
+	Name    string               `bson:"name"`
 	Stories []primitive.ObjectID `bson:"stories"`
 }
 
@@ -45,6 +44,7 @@ func (c *Category) CreateDocument(name string) error {
 	coll := getCategoryCollection()
 	c.Id = primitive.NewObjectID()
 	c.Name = name
+	c.Stories = make([]primitive.ObjectID, 0)
 	_, err := coll.InsertOne(context.TODO(), &c)
 	if err != nil && !mongo.IsDuplicateKeyError(err) {
 		return err
