@@ -107,6 +107,15 @@ services:
             - phpmyadmindata:/var/www/html:delegated
         depends_on:
             - user_service_db
+
+    # Rabbitmq Service
+    message_broker:
+        image: rabbitmq:3.9-management
+        ports:
+            - 15672:15672
+        environment:
+            - RABBITMQ_DEFAULT_USER=root 
+            - RABBITMQ_DEFAULT_PASS=root
             
 # Volumes
 volumes:
