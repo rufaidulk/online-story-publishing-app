@@ -62,6 +62,29 @@ func (s *StoryFeed) UpsertDocument() error {
 	return nil
 }
 
+func (s *StoryFeed) AddCategoriesBasedOnReadingHistoryToDocument(categories []primitive.ObjectID) error {
+	coll := getStoryFeedCollection()
+	var objIds bson.A
+	for _, val := range categories {
+		objIds = append(objIds, val)
+	}
+	data := bson.D{
+		{"categories_based_on_reading_history", bson.D{
+			{"$each", objIds},
+		}},
+	}
+	filter := bson.D{
+		{"_id", s.Id},
+	}
+	update := bson.D{{"$addToSet", data}}
+	_, err := coll.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *StoryFeed) AddFollowingAuthorToDocument() error {
 	coll := getStoryFeedCollection()
 	data := bson.D{

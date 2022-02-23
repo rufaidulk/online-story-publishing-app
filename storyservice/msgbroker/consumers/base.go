@@ -4,8 +4,9 @@ const UserServiceQueueName = "user_service_worker"
 const UserServiceExchangeName = "user_service_exchange"
 const UserServiceRoutingKey = "user_service"
 
-var Consumers [1]func() = [1]func(){
+var Consumers [2]func() = [2]func(){
 	UserServiceListener,
+	BackgroundJobHandler,
 }
 
 type EventData struct {

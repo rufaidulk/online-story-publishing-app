@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"storyservice/collections"
 	"storyservice/helper"
+	"storyservice/msgbroker"
 
 	"github.com/labstack/echo/v4"
 )
@@ -36,6 +37,7 @@ func CreateChapterReadLog(ctx echo.Context) error {
 		}
 	}
 
+	defer msgbroker.ChapterReadLogEventDispatch(userUuid, story.Id)
 	return ctx.JSON(http.StatusOK, helper.NewSuccessResponse(http.StatusCreated, "chapter read log created", ""))
 }
 
