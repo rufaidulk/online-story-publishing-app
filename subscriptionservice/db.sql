@@ -27,6 +27,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `payment_transactions`
 --
 
+DROP TABLE IF EXISTS `payment_transactions`;
 CREATE TABLE `payment_transactions` (
   `id` bigint NOT NULL,
   `ref_no` varchar(255) NOT NULL,
@@ -44,6 +45,7 @@ CREATE TABLE `payment_transactions` (
 -- Table structure for table `sequences`
 --
 
+DROP TABLE IF EXISTS `sequences`;
 CREATE TABLE `sequences` (
   `id` int NOT NULL,
   `type` varchar(255) NOT NULL,
@@ -63,6 +65,7 @@ INSERT INTO `sequences` (`id`, `type`, `seq_no`) VALUES
 -- Table structure for table `subscriptions`
 --
 
+DROP TABLE IF EXISTS `subscriptions`;
 CREATE TABLE `subscriptions` (
   `id` bigint NOT NULL,
   `user_uuid` binary(16) NOT NULL,
@@ -82,6 +85,7 @@ CREATE TABLE `subscriptions` (
 -- Table structure for table `subscription_plans`
 --
 
+DROP TABLE IF EXISTS `subscription_plans`;
 CREATE TABLE `subscription_plans` (
   `id` int NOT NULL,
   `period_type` tinyint NOT NULL,
