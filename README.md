@@ -16,3 +16,7 @@
 
 ### Subscription Service (MySQL)
 [<img src="https://github.com/rufaidulk/online-story-publishing-app/blob/main/docs/subscription_service_db.png">](https://github.com/rufaidulk/online-story-publishing-app/blob/main/docs/subscription_service_db.png)
+
+## Testing
+### User Service Testing
+`./setup.sh test user_service`
