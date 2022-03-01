@@ -19,4 +19,6 @@
 
 ## Testing
 ### User Service Testing
-`./setup.sh test user_service`
+```
+./setup.sh test user_service
+```
