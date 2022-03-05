@@ -19,6 +19,22 @@ import (
 var jwt string
 var userDetails interface{}
 
+type TestUser struct {
+	Name        string
+	Email       string
+	Password    string
+	PenName     string
+	Description string
+}
+
+var testUser = TestUser{
+	Name:        "alex",
+	Email:       "alex@test.com",
+	Password:    "123456",
+	PenName:     "alexy",
+	Description: "thriller story writer",
+}
+
 func TestMain(m *testing.M) {
 	fmt.Println("Unit tests starting...")
 	exitCode := m.Run()
@@ -27,7 +43,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestRegistration(t *testing.T) {
-	reqBody := `{"name":"alex","email":"alex@test.com","password":"123456"}`
+	reqBody := fmt.Sprintf("{\"name\":\"%s\",\"email\":\"%s\",\"password\": \"%s\" }", testUser.Name, testUser.Email, testUser.Password)
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(reqBody))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -43,7 +59,7 @@ func TestRegistration(t *testing.T) {
 }
 
 func TestLogin(t *testing.T) {
-	reqBody := `{"email":"alex@test.com","password":"123456"}`
+	reqBody := fmt.Sprintf("{\"email\":\"%s\",\"password\": \"%s\" }", testUser.Email, testUser.Password)
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(reqBody))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
